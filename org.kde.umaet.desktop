@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Umaet
+GenericName=Personal Finance & Budget Tracker
+Comment=Track expenses, income, budgets and visualize spending patterns
+Exec=umaet
+Icon=umaet
+Terminal=false
+Type=Application
+Categories=Qt;KDE;Office;Finance;
+StartupNotify=true
+X-KDE-StartupNotify=true

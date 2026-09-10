@@ -1,0 +1,24 @@
+pkgbase = umaet-git
+	pkgdesc = A personal finance and budget tracking app for KDE Plasma
+	pkgver = 1.0.0.r0
+	pkgrel = 1
+	url = https://github.com/suto-secops/umaet
+	arch = x86_64
+	arch = aarch64
+	license = GPL-3.0-or-later
+	makedepends = git
+	makedepends = cmake
+	makedepends = extra-cmake-modules
+	makedepends = ninja
+	depends = qt6-base
+	depends = qt6-declarative
+	depends = kirigami
+	depends = kcoreaddons
+	depends = ki18n
+	depends = sqlite
+	provides = umaet
+	conflicts = umaet
+	source = git+https://github.com/suto-secops/umaet.git
+	sha256sums = SKIP
+
+pkgname = umaet-git

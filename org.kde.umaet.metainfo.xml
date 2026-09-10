@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop-application">
+  <id>org.kde.umaet</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Umaet</name>
+  <summary>Simple personal finance and budget tracker for KDE Plasma</summary>
+  <description>
+    <p>
+      Umaet is a native KDE Plasma personal finance tracker built with Qt 6 and Kirigami.
+      It helps you keep track of daily income and expenses, plan monthly budgets, and visualize
+      spending trends across weeks, months, and years.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Log income and expenses with customizable categories, dates, and notes.</li>
+      <li>Comprehensive trend charts aggregated by week, month, and year.</li>
+      <li>Monthly budgeting with global caps and category-level limits.</li>
+      <li>Fast local SQLite storage with JSON and CSV bulk import/export.</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">org.kde.umaet.desktop</launchable>
+  <provides>
+    <binary>umaet</binary>
+  </provides>
+</component>
