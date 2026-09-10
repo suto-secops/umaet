@@ -120,6 +120,7 @@ Kirigami.ScrollablePage {
 
             Kirigami.Card {
                 Layout.fillWidth: true
+                visible: settingsManager.showNetBalance
                 header: QQC2.Label {
                     text: qsTr("Net Savings")
                     font.weight: Font.DemiBold

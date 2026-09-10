@@ -41,6 +41,8 @@ set(UMAET_CORE_SRCS
     src/BudgetManager.cpp
     src/StatsManager.h
     src/StatsManager.cpp
+    src/SettingsManager.h
+    src/SettingsManager.cpp
 )
 
 add_executable(umaet

@@ -27,6 +27,9 @@ public:
     Q_INVOKABLE QString exportToJson() const;
     Q_INVOKABLE QString exportToCsv() const;
 
+    // Sample Data
+    Q_INVOKABLE void loadSampleDataset();
+
     // File helpers
     Q_INVOKABLE bool importFromFile(const QString &filePath, QString *errorMessage = nullptr);
     Q_INVOKABLE bool exportToFile(const QString &filePath, const QString &format, QString *errorMessage = nullptr);

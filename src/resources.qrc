@@ -6,6 +6,7 @@
         <file>qml/ChartsPage.qml</file>
         <file>qml/BudgetPage.qml</file>
         <file>qml/ImportExportDialog.qml</file>
+        <file>qml/SettingsPage.qml</file>
         <file alias="icons/umaet.svg">../icons/umaet.svg</file>
     </qresource>
 </RCC>

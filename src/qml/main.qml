@@ -39,6 +39,12 @@ Kirigami.ApplicationWindow {
                 text: qsTr("Import / Export Data")
                 icon.name: "document-import"
                 onTriggered: importExportDialog.open()
+            },
+            Kirigami.Action {
+                text: qsTr("Settings")
+                icon.name: "settings-configure"
+                checked: pageStack.currentItem === settingsPage
+                onTriggered: pageStack.replace(settingsPage)
             }
         ]
     }
@@ -60,6 +66,11 @@ Kirigami.ApplicationWindow {
     Component {
         id: budgetPage
         BudgetPage {}
+    }
+
+    Component {
+        id: settingsPage
+        SettingsPage {}
     }
 
     AddEditTransactionDialog {

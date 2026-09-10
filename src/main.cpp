@@ -8,6 +8,7 @@
 #include "TransactionModel.h"
 #include "BudgetManager.h"
 #include "StatsManager.h"
+#include "SettingsManager.h"
 
 int main(int argc, char *argv[])
 {
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("transactionModel"), &transactionModel);
     engine.rootContext()->setContextProperty(QStringLiteral("budgetManager"), &budgetManager);
     engine.rootContext()->setContextProperty(QStringLiteral("statsManager"), &statsManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("settingsManager"), &SettingsManager::instance());
 
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
