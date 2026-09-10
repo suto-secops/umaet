@@ -45,16 +45,7 @@ sudo cmake --install build
 
 ---
 
-## 📦 AUR Packaging
-
-Umaet comes with a ready-to-use `PKGBUILD` for Arch Linux / AUR:
-
-```bash
-makepkg -si
-```
-
----
-
 ## 📄 License
 
-This project is licensed under the **GNU General Public License v3.0 or later** ([GPL-3.0-or-later](LICENSE)).
+This project is licensed under the **PolyForm Noncommercial License 1.0.0** ([LICENSE](LICENSE)).
+
