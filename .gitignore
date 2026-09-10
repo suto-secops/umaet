@@ -31,5 +31,8 @@ ui_*.h
 # Arch packaging build files
 pkg/
 umaet-pkg/
+src/umaet/
+src/build/
+umaet/
 *.pkg.tar.zst
 umaet-*.tar.gz

@@ -1,6 +1,6 @@
 # Maintainer: Suto <218235327+suto-secops@users.noreply.github.com>
 pkgname=umaet-git
-pkgver=1.0.0.r0
+pkgver=1.0.0.r1.1d3da53
 pkgrel=1
 pkgdesc="A personal finance and budget tracking app for KDE Plasma"
 arch=('x86_64' 'aarch64')
