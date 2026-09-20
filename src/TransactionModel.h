@@ -92,6 +92,7 @@ public:
 
     Q_INVOKABLE bool addTransaction(const QString &type, double amount, const QString &category, const QString &date, const QString &note, const QString &title = QString());
     Q_INVOKABLE bool updateTransaction(int id, const QString &type, double amount, const QString &category, const QString &date, const QString &note, const QString &title = QString());
+    Q_INVOKABLE bool massUpdateTransactions(const QVariantList &ids, const QString &type, const QString &category, const QString &date);
     Q_INVOKABLE bool deleteTransaction(int id);
     Q_INVOKABLE void resetFilters();
     Q_INVOKABLE void refresh();

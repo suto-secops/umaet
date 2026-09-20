@@ -6,7 +6,6 @@ import org.kde.kirigami as Kirigami
 Kirigami.Dialog {
     id: dialog
     title: isEditing ? qsTr("Edit Transaction") : qsTr("Add Transaction")
-    standardButtons: Kirigami.Dialog.Save | Kirigami.Dialog.Cancel
 
     property bool isEditing: false
     property int editId: -1

@@ -356,6 +356,41 @@ bool TransactionModel::updateTransaction(int id, const QString &type, double amo
     return false;
 }
 
+bool TransactionModel::massUpdateTransactions(const QVariantList &ids, const QString &type, const QString &category, const QString &date)
+{
+    if (ids.isEmpty()) return false;
+    
+    QStringList sets;
+    if (!type.isEmpty()) sets.append(QStringLiteral("type = :type"));
+    if (!category.isEmpty()) sets.append(QStringLiteral("category = :category"));
+    if (!date.isEmpty()) sets.append(QStringLiteral("date = :date"));
+    
+    if (sets.isEmpty()) return false;
+    
+    QStringList idStrs;
+    for (const QVariant &id : ids) idStrs.append(QString::number(id.toInt()));
+    
+    QSqlDatabase db = DatabaseManager::instance().database();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral("UPDATE transactions SET ") + sets.join(QStringLiteral(", ")) + 
+              QStringLiteral(" WHERE id IN (") + idStrs.join(QStringLiteral(",")) + QStringLiteral(");"));
+              
+    if (!type.isEmpty()) q.bindValue(QStringLiteral(":type"), type.toLower());
+    if (!category.isEmpty()) q.bindValue(QStringLiteral(":category"), category.trimmed());
+    if (!date.isEmpty()) q.bindValue(QStringLiteral(":date"), date.trimmed());
+    
+    if (q.exec()) {
+        if (!category.isEmpty()) {
+            DatabaseManager::instance().addCategory(category.trimmed());
+        }
+        Q_EMIT DatabaseManager::instance().databaseUpdated();
+        return true;
+    }
+    
+    qWarning() << "Failed to mass update transactions:" << q.lastError().text();
+    return false;
+}
+
 bool TransactionModel::deleteTransaction(int id)
 {
     if (id <= 0) return false;

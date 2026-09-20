@@ -3,6 +3,7 @@
         <file>qml/main.qml</file>
         <file>qml/TransactionsPage.qml</file>
         <file>qml/AddEditTransactionDialog.qml</file>
+        <file>qml/MassEditDialog.qml</file>
         <file>qml/ChartsPage.qml</file>
         <file>qml/BudgetPage.qml</file>
         <file>qml/ImportExportDialog.qml</file>

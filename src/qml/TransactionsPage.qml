@@ -40,16 +40,16 @@ Kirigami.ScrollablePage {
             onTriggered: addEditDialog.openForAdd()
         },
         Kirigami.Action {
-            text: page.viewMode === 0 ? qsTr("2-Col View") : qsTr("1-Col View")
-            icon.name: page.viewMode === 0 ? "view-grid" : "view-list-details"
-            visible: !page.selectionMode
-            onTriggered: page.viewMode = (page.viewMode === 0 ? 1 : 0)
-        },
-        Kirigami.Action {
             text: qsTr("Select")
             icon.name: "edit-select"
             visible: !page.selectionMode
             onTriggered: { page.selectionMode = true; }
+        },
+        Kirigami.Action {
+            text: qsTr("Edit (%1)").arg(page.selectedCount)
+            icon.name: "document-edit"
+            visible: page.selectionMode && page.selectedCount > 0
+            onTriggered: massEditDialog.openForIds(Object.keys(page.selectedIds).map(Number))
         },
         Kirigami.Action {
             text: qsTr("Delete (%1)").arg(page.selectedCount)
@@ -73,6 +73,11 @@ Kirigami.ScrollablePage {
             }
         }
     ]
+
+    MassEditDialog {
+        id: massEditDialog
+        onAccepted: page.clearSelection()
+    }
 
     header: ColumnLayout {
         spacing: 0
@@ -185,7 +190,7 @@ Kirigami.ScrollablePage {
                     QQC2.Popup {
                         id: categoryPopup
                         width: 220
-                        height: Math.min(320, catCheckList.implicitHeight + 16)
+                        height: Math.min(320, catCheckList.contentHeight + 16)
                         padding: 8
                         modal: true
                         focus: true
@@ -235,7 +240,7 @@ Kirigami.ScrollablePage {
                     QQC2.Popup {
                         id: monthPopup
                         width: 180
-                        height: monthCheckList.implicitHeight + 16
+                        height: Math.min(300, monthCheckList.contentHeight + 16)
                         padding: 8
                         modal: true
                         focus: true
@@ -283,7 +288,7 @@ Kirigami.ScrollablePage {
                     QQC2.Popup {
                         id: yearPopup
                         width: 160
-                        height: Math.min(300, yearCheckList.implicitHeight + 16)
+                        height: Math.min(300, yearCheckList.contentHeight + 16)
                         padding: 8
                         modal: true
                         focus: true
@@ -399,6 +404,19 @@ Kirigami.ScrollablePage {
                     onClicked: transactionModel.sortAscending = !transactionModel.sortAscending
                 }
             }
+
+            // Columns spinbox
+            ColumnLayout {
+                spacing: 2
+                QQC2.Label { text: qsTr("Columns"); font.pixelSize: Kirigami.Theme.smallFont.pixelSize; color: Kirigami.Theme.disabledTextColor }
+                QQC2.SpinBox {
+                    id: colSpinBox
+                    from: 1
+                    to: 6
+                    value: 1
+                    Layout.preferredWidth: 100
+                }
+            }
         }
 
         Kirigami.Separator { Layout.fillWidth: true }
@@ -410,10 +428,9 @@ Kirigami.ScrollablePage {
         model: transactionModel
         clip: true
 
-        // 1-col or 2-col
-        readonly property int cols: page.viewMode === 1 ? 2 : 1
+        readonly property int cols: colSpinBox.value
         cellWidth: Math.floor(width / cols)
-        cellHeight: page.viewMode === 1 ? 96 : 76
+        cellHeight: cols > 1 ? 96 : 76
 
         Kirigami.PlaceholderMessage {
             anchors.centerIn: parent
@@ -441,11 +458,9 @@ Kirigami.ScrollablePage {
                 radius: 6
                 color: delegateRoot.isSelected
                        ? Qt.alpha(Kirigami.Theme.highlightColor, 0.25)
-                       : (delegateRoot.index % 2 === 0
-                          ? Kirigami.Theme.backgroundColor
-                          : Kirigami.Theme.alternateBackgroundColor)
-                border.color: delegateRoot.isSelected ? Kirigami.Theme.highlightColor : "transparent"
-                border.width: delegateRoot.isSelected ? 2 : 0
+                       : Kirigami.Theme.backgroundColor
+                border.color: delegateRoot.isSelected ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
+                border.width: delegateRoot.isSelected ? 2 : 1
 
                 RowLayout {
                     anchors { fill: parent; leftMargin: 10; rightMargin: 6; topMargin: 6; bottomMargin: 6 }
@@ -508,9 +523,9 @@ Kirigami.ScrollablePage {
                             }
                         }
 
-                        // Note / description (hide in 2-col compact mode)
+                        // Note / description (hide in multi-col compact mode)
                         QQC2.Label {
-                            visible: page.viewMode === 0 && delegateRoot.model.note.length > 0
+                            visible: txGrid.cols === 1 && delegateRoot.model.note.length > 0
                             text: delegateRoot.model.note
                             color: Kirigami.Theme.disabledTextColor
                             font.pixelSize: Kirigami.Theme.smallFont.pixelSize
@@ -528,9 +543,9 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
 
-                    // Edit/Delete buttons (hidden in compact 2-col and selection mode)
+                    // Edit/Delete buttons (hidden in compact multi-col and selection mode)
                     QQC2.ToolButton {
-                        visible: page.viewMode === 0 && !page.selectionMode
+                        visible: txGrid.cols === 1 && !page.selectionMode
                         icon.name: "document-edit"
                         display: QQC2.AbstractButton.IconOnly
                         QQC2.ToolTip.text: qsTr("Edit")
@@ -543,7 +558,7 @@ Kirigami.ScrollablePage {
                         )
                     }
                     QQC2.ToolButton {
-                        visible: page.viewMode === 0 && !page.selectionMode
+                        visible: txGrid.cols === 1 && !page.selectionMode
                         icon.name: "edit-delete"
                         display: QQC2.AbstractButton.IconOnly
                         QQC2.ToolTip.text: qsTr("Delete")
