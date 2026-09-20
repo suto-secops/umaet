@@ -17,6 +17,7 @@ Kirigami.Dialog {
         typeGroup.checkState = Qt.Unchecked;
         expenseBtn.checked = true;
         amountField.text = "";
+        titleField.text = "";
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -25,11 +26,12 @@ Kirigami.Dialog {
         noteField.text = "";
         categoryCombo.currentIndex = 0;
         categoryCustomField.text = "";
+        colorCustomField.text = "#3daee9";
         errorLabel.text = "";
         open();
     }
 
-    function openForEdit(id, type, amount, category, date, note) {
+    function openForEdit(id, type, amount, category, date, note, title) {
         isEditing = true;
         editId = id;
         if (type === "income") {
@@ -38,6 +40,7 @@ Kirigami.Dialog {
             expenseBtn.checked = true;
         }
         amountField.text = amount.toString();
+        titleField.text = title || "";
         dateField.text = date;
         noteField.text = note;
         errorLabel.text = "";
@@ -47,9 +50,11 @@ Kirigami.Dialog {
         if (idx >= 0) {
             categoryCombo.currentIndex = idx;
             categoryCustomField.text = "";
+            colorCustomField.text = "";
         } else {
             categoryCombo.currentIndex = -1;
             categoryCustomField.text = category;
+            colorCustomField.text = "#3daee9";
         }
         open();
     }
@@ -83,6 +88,7 @@ Kirigami.Dialog {
         }
 
         let cat = categoryCustomField.text.trim();
+        let catColor = colorCustomField.text.trim();
         if (cat.length === 0 && categoryCombo.currentText.length > 0) {
             cat = categoryCombo.currentText;
         }
@@ -91,12 +97,16 @@ Kirigami.Dialog {
         }
 
         const transType = incomeBtn.checked ? "income" : "expense";
+        
+        if (categoryCustomField.text.trim().length > 0) {
+            dbManager.addCategoryWithColor(cat, catColor);
+        }
 
         let success = false;
         if (isEditing) {
-            success = transactionModel.updateTransaction(editId, transType, amt, cat, dateField.text.trim(), noteField.text.trim());
+            success = transactionModel.updateTransaction(editId, transType, amt, cat, dateField.text.trim(), noteField.text.trim(), titleField.text.trim());
         } else {
-            success = transactionModel.addTransaction(transType, amt, cat, dateField.text.trim(), noteField.text.trim());
+            success = transactionModel.addTransaction(transType, amt, cat, dateField.text.trim(), noteField.text.trim(), titleField.text.trim());
         }
 
         if (!success) {
@@ -141,6 +151,13 @@ Kirigami.Dialog {
                 Layout.fillWidth: true
             }
 
+            QQC2.TextField {
+                id: titleField
+                Kirigami.FormData.label: qsTr("Title:")
+                placeholderText: qsTr("Short descriptive title...")
+                Layout.fillWidth: true
+            }
+
             QQC2.ComboBox {
                 id: categoryCombo
                 Kirigami.FormData.label: qsTr("Category:")
@@ -154,6 +171,14 @@ Kirigami.Dialog {
                 placeholderText: qsTr("Custom category name...")
                 Layout.fillWidth: true
             }
+            
+            QQC2.TextField {
+                id: colorCustomField
+                Kirigami.FormData.label: qsTr("New Cat Color:")
+                placeholderText: qsTr("Hex color, e.g. #ff0000")
+                visible: categoryCustomField.text.length > 0
+                Layout.fillWidth: true
+            }
 
             QQC2.TextField {
                 id: dateField
@@ -165,7 +190,7 @@ Kirigami.Dialog {
             QQC2.TextField {
                 id: noteField
                 Kirigami.FormData.label: qsTr("Note / Description:")
-                placeholderText: qsTr("e.g. Grocery store, monthly salary...")
+                placeholderText: qsTr("Additional details...")
                 Layout.fillWidth: true
             }
         }

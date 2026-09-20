@@ -85,6 +85,7 @@ void DatabaseManager::initTables()
         "  category TEXT NOT NULL,"
         "  date TEXT NOT NULL,"
         "  note TEXT,"
+        "  title TEXT NOT NULL DEFAULT '',"
         "  created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
         ");"
     ));
@@ -102,13 +103,48 @@ void DatabaseManager::initTables()
     query.exec(QStringLiteral(
         "CREATE TABLE IF NOT EXISTS categories ("
         "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  name TEXT UNIQUE NOT NULL"
+        "  name TEXT UNIQUE NOT NULL,"
+        "  color TEXT NOT NULL DEFAULT '#3daee9'"
         ");"
     ));
 
     // Indexes for fast date and category lookups
     query.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_trans_date ON transactions(date);"));
     query.exec(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_trans_category ON transactions(category);"));
+
+    // --- Migrations for existing databases ---
+
+    // Add 'title' column to transactions if missing
+    {
+        bool hasTitleCol = false;
+        QSqlQuery pragma(db);
+        pragma.exec(QStringLiteral("PRAGMA table_info(transactions);"));
+        while (pragma.next()) {
+            if (pragma.value(1).toString() == QStringLiteral("title")) {
+                hasTitleCol = true;
+                break;
+            }
+        }
+        if (!hasTitleCol) {
+            query.exec(QStringLiteral("ALTER TABLE transactions ADD COLUMN title TEXT NOT NULL DEFAULT '';"));
+        }
+    }
+
+    // Add 'color' column to categories if missing
+    {
+        bool hasColorCol = false;
+        QSqlQuery pragma(db);
+        pragma.exec(QStringLiteral("PRAGMA table_info(categories);"));
+        while (pragma.next()) {
+            if (pragma.value(1).toString() == QStringLiteral("color")) {
+                hasColorCol = true;
+                break;
+            }
+        }
+        if (!hasColorCol) {
+            query.exec(QStringLiteral("ALTER TABLE categories ADD COLUMN color TEXT NOT NULL DEFAULT '#3daee9';"));
+        }
+    }
 }
 
 void DatabaseManager::seedCategories()
@@ -117,24 +153,27 @@ void DatabaseManager::seedCategories()
     QSqlQuery check(db);
     check.exec(QStringLiteral("SELECT COUNT(*) FROM categories;"));
     if (check.next() && check.value(0).toInt() == 0) {
-        const QStringList defaults = {
-            QStringLiteral("Food & Dining"),
-            QStringLiteral("Housing"),
-            QStringLiteral("Transportation"),
-            QStringLiteral("Utilities"),
-            QStringLiteral("Entertainment"),
-            QStringLiteral("Healthcare"),
-            QStringLiteral("Shopping"),
-            QStringLiteral("Salary"),
-            QStringLiteral("Investments"),
-            QStringLiteral("Other")
+        static const struct { const char *name; const char *color; } defaults[] = {
+            { "Salary",         "#2ecc71" },
+            { "Food & Dining",  "#e67e22" },
+            { "Housing",        "#3daee9" },
+            { "Transportation", "#9b59b6" },
+            { "Utilities",      "#f1c40f" },
+            { "Entertainment",  "#e74c3c" },
+            { "Shopping",       "#fd79a8" },
+            { "Healthcare",     "#1abc9c" },
+            { "Investments",    "#00cec9" },
+            { "Education",      "#6c5ce7" },
+            { "Travel",         "#d35400" },
+            { "Other",          "#95a5a6" }
         };
 
         db.transaction();
         QSqlQuery insert(db);
-        insert.prepare(QStringLiteral("INSERT OR IGNORE INTO categories (name) VALUES (:name);"));
-        for (const QString &cat : defaults) {
-            insert.bindValue(QStringLiteral(":name"), cat);
+        insert.prepare(QStringLiteral("INSERT OR IGNORE INTO categories (name, color) VALUES (:name, :color);"));
+        for (const auto &cat : defaults) {
+            insert.bindValue(QStringLiteral(":name"),  QString::fromLatin1(cat.name));
+            insert.bindValue(QStringLiteral(":color"), QString::fromLatin1(cat.color));
             insert.exec();
         }
         db.commit();
@@ -179,6 +218,76 @@ bool DatabaseManager::removeCategory(const QString &name)
         return true;
     }
     return false;
+}
+
+QVariantList DatabaseManager::getCategoriesWithColors() const
+{
+    QVariantList result;
+    QSqlDatabase db = database();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral("SELECT name, color FROM categories ORDER BY name ASC;"));
+    if (q.exec()) {
+        while (q.next()) {
+            QVariantMap map;
+            map[QStringLiteral("name")]  = q.value(0).toString();
+            map[QStringLiteral("color")] = q.value(1).toString();
+            result.append(map);
+        }
+    }
+    return result;
+}
+
+bool DatabaseManager::addCategoryWithColor(const QString &name, const QString &color)
+{
+    const QString trimmedName  = name.trimmed();
+    const QString trimmedColor = color.trimmed();
+    if (trimmedName.isEmpty()) return false;
+
+    QSqlDatabase db = database();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral(
+        "INSERT INTO categories (name, color) VALUES (:name, :color) "
+        "ON CONFLICT(name) DO UPDATE SET color = excluded.color;"
+    ));
+    q.bindValue(QStringLiteral(":name"),  trimmedName);
+    q.bindValue(QStringLiteral(":color"), trimmedColor.isEmpty() ? QStringLiteral("#3daee9") : trimmedColor);
+    if (q.exec()) {
+        Q_EMIT categoriesUpdated();
+        return true;
+    }
+    return false;
+}
+
+bool DatabaseManager::updateCategoryColor(const QString &name, const QString &color)
+{
+    const QString trimmedName  = name.trimmed();
+    const QString trimmedColor = color.trimmed();
+    if (trimmedName.isEmpty()) return false;
+
+    QSqlDatabase db = database();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral("UPDATE categories SET color = :color WHERE name = :name;"));
+    q.bindValue(QStringLiteral(":color"), trimmedColor);
+    q.bindValue(QStringLiteral(":name"),  trimmedName);
+    if (q.exec()) {
+        Q_EMIT categoriesUpdated();
+        return true;
+    }
+    return false;
+}
+
+QString DatabaseManager::getCategoryColor(const QString &name) const
+{
+    QSqlDatabase db = database();
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral("SELECT color FROM categories WHERE name = :name;"));
+    q.bindValue(QStringLiteral(":name"), name.trimmed());
+    if (q.exec() && q.next()) {
+        const QString color = q.value(0).toString();
+        if (!color.isEmpty()) return color;
+    }
+    // Fallback default
+    return QStringLiteral("#3daee9");
 }
 
 bool DatabaseManager::importFromJson(const QString &jsonContent, QString *errorMessage)

@@ -57,40 +57,39 @@ QVariantList StatsManager::getWeeklyData(int numWeeks) const
     QVariantList list;
     QSqlDatabase db = DatabaseManager::instance().database();
 
-    // Query weekly totals for the most recent weeks or selected year
+    const QDate today = QDate::currentDate();
+    // Monday of current week (Qt: Monday=1)
+    const QDate currentMonday = today.addDays(-(today.dayOfWeek() - 1));
+
     QSqlQuery q(db);
     q.prepare(QStringLiteral(
-        "SELECT strftime('%Y-W%W', date) AS week_str, "
-        "       COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS inc, "
-        "       COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS exp "
-        "FROM transactions "
-        "GROUP BY week_str "
-        "ORDER BY week_str DESC "
-        "LIMIT :lim;"
+        "SELECT "
+        "  COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END),0), "
+        "  COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) "
+        "FROM transactions WHERE date >= :mon AND date <= :sun;"
     ));
-    q.bindValue(QStringLiteral(":lim"), numWeeks);
 
-    if (q.exec()) {
-        QList<QVariantMap> reversed;
-        while (q.next()) {
-            QVariantMap item;
-            QString full = q.value(0).toString();
-            QString shortLabel = full.section(QLatin1Char('-'), 1, 1);
-            if (shortLabel.isEmpty()) shortLabel = full;
+    // Build oldest-first: start from (numWeeks-1) weeks ago up to current week
+    for (int i = numWeeks - 1; i >= 0; --i) {
+        QDate monday = currentMonday.addDays(-7 * i);
+        QDate sunday = monday.addDays(6);
 
-            double inc = q.value(1).toDouble();
-            double exp = q.value(2).toDouble();
+        q.bindValue(QStringLiteral(":mon"), monday.toString(Qt::ISODate));
+        q.bindValue(QStringLiteral(":sun"), sunday.toString(Qt::ISODate));
 
-            item[QStringLiteral("label")] = shortLabel;
-            item[QStringLiteral("fullLabel")] = full;
-            item[QStringLiteral("income")] = inc;
-            item[QStringLiteral("expense")] = exp;
-            item[QStringLiteral("net")] = inc - exp;
-            reversed.append(item);
+        double inc = 0.0, exp = 0.0;
+        if (q.exec() && q.next()) {
+            inc = q.value(0).toDouble();
+            exp = q.value(1).toDouble();
         }
-        for (int i = reversed.size() - 1; i >= 0; --i) {
-            list.append(reversed.at(i));
-        }
+
+        QVariantMap item;
+        item[QStringLiteral("label")]     = monday.toString(QStringLiteral("dd/MM"));
+        item[QStringLiteral("fullLabel")] = QString(monday.toString(QStringLiteral("dd MMM")) + QLatin1String(" - ") + sunday.toString(QStringLiteral("dd MMM")));
+        item[QStringLiteral("income")]    = inc;
+        item[QStringLiteral("expense")]   = exp;
+        item[QStringLiteral("net")]       = inc - exp;
+        list.append(item);
     }
 
     return list;
@@ -224,21 +223,12 @@ QVariantList StatsManager::getCategoryBreakdown(int year, int month, const QStri
         }
     }
 
-    static const QStringList palette = {
-        QStringLiteral("#3daee9"), QStringLiteral("#2ecc71"), QStringLiteral("#f1c40f"),
-        QStringLiteral("#e74c3c"), QStringLiteral("#9b59b6"), QStringLiteral("#1abc9c"),
-        QStringLiteral("#e67e22"), QStringLiteral("#34495e"), QStringLiteral("#fd79a8"),
-        QStringLiteral("#00cec9"), QStringLiteral("#6c5ce7"), QStringLiteral("#b2bec3")
-    };
-
-    int colorIdx = 0;
     for (const auto &pair : rows) {
         QVariantMap item;
         item[QStringLiteral("category")] = pair.first;
         item[QStringLiteral("amount")] = pair.second;
         item[QStringLiteral("percentage")] = (grandTotal > 0.0) ? (pair.second / grandTotal) : 0.0;
-        item[QStringLiteral("color")] = palette.at(colorIdx % palette.size());
-        colorIdx++;
+        item[QStringLiteral("color")] = DatabaseManager::instance().getCategoryColor(pair.first);
         list.append(item);
     }
 

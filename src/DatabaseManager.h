@@ -18,8 +18,13 @@ public:
     QSqlDatabase database() const;
 
     Q_INVOKABLE QStringList getCategories() const;
+    Q_INVOKABLE QVariantList getCategoriesWithColors() const;
+
     Q_INVOKABLE bool addCategory(const QString &name);
+    Q_INVOKABLE bool addCategoryWithColor(const QString &name, const QString &color);
+    Q_INVOKABLE bool updateCategoryColor(const QString &name, const QString &color);
     Q_INVOKABLE bool removeCategory(const QString &name);
+    Q_INVOKABLE QString getCategoryColor(const QString &name) const;
 
     // Bulk Import / Export
     Q_INVOKABLE bool importFromJson(const QString &jsonContent, QString *errorMessage = nullptr);
